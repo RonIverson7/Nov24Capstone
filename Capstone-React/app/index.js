@@ -5,6 +5,7 @@ import { Link, useRouter } from "expo-router";
 import { supabase } from "../supabase/supabaseClient";
 import { useUser } from "./contexts/UserContext";
 import "react-native-url-polyfill/auto";
+import ForgotPasswordModal from "./components/ForgotPasswordModal";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
 
@@ -16,6 +17,7 @@ const LoginScreen = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const { refreshUserData } = useUser();
 
   const router = useRouter();
@@ -197,7 +199,10 @@ const LoginScreen = () => {
             </View>
 
             {/* Forgot Password */}
-            <TouchableOpacity style={styles.forgotPasswordContainer}>
+            <TouchableOpacity
+              style={styles.forgotPasswordContainer}
+              onPress={() => setShowForgotPassword(true)}
+            >
               <Text style={styles.forgotPassword}>Forgot your password?</Text>
             </TouchableOpacity>
 
@@ -242,6 +247,11 @@ const LoginScreen = () => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <ForgotPasswordModal
+        isOpen={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+      />
     </SafeAreaView>
   );
 };

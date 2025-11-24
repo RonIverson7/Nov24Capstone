@@ -319,7 +319,7 @@ export default function ProfileModal(props) {
                               handleEditArtwork(selectedArt);
                             }}
                           >
-                            <Ionicons name="pencil-outline" size={18} color="#555" />
+                            <Ionicons name="create-outline" size={18} color="#555" />
                             <Text style={styles.menuItemText}>Edit</Text>
                           </TouchableOpacity>
                           <TouchableOpacity 

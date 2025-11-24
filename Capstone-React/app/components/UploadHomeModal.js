@@ -93,7 +93,7 @@ export default function UploadModalHome({
                 )}
                 <TextInput
                   style={styles.postTextInput}
-                  placeholder="What's on your mind?"
+                  placeholder="Share inspiration, artwork, or a thought"
                   placeholderTextColor="#999"
                   value={postText}
                   onChangeText={setPostText}
@@ -102,7 +102,7 @@ export default function UploadModalHome({
                 />
               </View>
 
-              <Text style={styles.uploadInputLabel}>Media (Photos, Videos, GIFs)</Text>
+              <Text style={styles.uploadInputLabel}>Media</Text>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}

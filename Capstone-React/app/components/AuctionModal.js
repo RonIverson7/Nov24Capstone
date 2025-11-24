@@ -31,6 +31,10 @@ export default function AuctionModal({ visible, onClose, item, onPlaceBid }) {
   const [myBids, setMyBids] = useState([]);
   const [loadingMyBids, setLoadingMyBids] = useState(false);
   const [errorMyBids, setErrorMyBids] = useState('');
+  const [sellerCouriers, setSellerCouriers] = useState(null);
+  const [selectedCourierBrand, setSelectedCourierBrand] = useState('');
+  const [selectedCourierService, setSelectedCourierService] = useState('');
+  const [estimatedShippingPrice, setEstimatedShippingPrice] = useState(0);
   const { userData } = useUser();
 
   const normalizeImageUri = (img) => {
@@ -121,6 +125,53 @@ export default function AuctionModal({ visible, onClose, item, onPlaceBid }) {
     }
   }, [visible, item]);
 
+  // Fetch auction details to get seller shipping preferences
+  const fetchAuctionDetails = async () => {
+    try {
+      if (!visible || !item) return;
+      const auctionId = item?.auctionId || item?.id || item?.marketItemId;
+      if (!auctionId) return;
+      
+      const { data } = await supabase.auth.getSession();
+      const at = data?.session?.access_token || '';
+      const rt = data?.session?.refresh_token || '';
+      
+      const res = await fetch(`${API_BASE}/auctions/${auctionId}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: `access_token=${at}; refresh_token=${rt}`,
+        },
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok && json?.success && json?.data?.sellerShippingPrefs) {
+        const prefs = json.data.sellerShippingPrefs;
+        // Normalize: keep only couriers with at least one enabled service
+        const couriers = prefs?.couriers || {};
+        const filtered = Object.fromEntries(
+          Object.entries(couriers).filter(([_, svc]) => Boolean(svc?.standard) || Boolean(svc?.express))
+        );
+        setSellerCouriers({ couriers: filtered });
+        // Auto-select first available brand/service
+        const brands = Object.keys(filtered);
+        if (brands.length > 0) {
+          const fb = brands[0];
+          const services = ['standard', 'express'].filter(s => filtered[fb]?.[s]);
+          setSelectedCourierBrand(fb);
+          setSelectedCourierService(services[0] || '');
+        } else {
+          setSelectedCourierBrand('');
+          setSelectedCourierService('');
+        }
+      } else {
+        setSellerCouriers(null);
+      }
+    } catch (e) {
+      setSellerCouriers(null);
+    }
+  };
+
   // Reset state when modal opens
   useEffect(() => {
     if (visible) {
@@ -130,6 +181,7 @@ export default function AuctionModal({ visible, onClose, item, onPlaceBid }) {
       setSelectedTab('details');
       setIsDescriptionExpanded(false);
       fetchAddresses();
+      fetchAuctionDetails();
     }
   }, [visible]);
   
@@ -138,6 +190,58 @@ export default function AuctionModal({ visible, onClose, item, onPlaceBid }) {
     const id = setInterval(() => setNowTs(Date.now()), 1000);
     return () => clearInterval(id);
   }, [visible]);
+
+  // Derive courier options
+  const courierOptions = sellerCouriers?.couriers || {};
+  const courierBrands = Object.keys(courierOptions);
+  const hasCourierOptions = courierBrands.some(brand => courierOptions[brand]?.standard || courierOptions[brand]?.express);
+
+  // Keep selected service valid when brand changes
+  useEffect(() => {
+    if (!hasCourierOptions || !selectedCourierBrand) return;
+    const services = ['standard', 'express'].filter(s => courierOptions[selectedCourierBrand]?.[s]);
+    if (services.length === 0) {
+      setSelectedCourierService('');
+    } else if (!services.includes(selectedCourierService)) {
+      setSelectedCourierService(services[0]);
+    }
+  }, [selectedCourierBrand, hasCourierOptions, courierOptions]);
+
+  // Fetch server shipping quote when selection changes
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      if (!hasCourierOptions || !selectedCourierBrand || !selectedCourierService) {
+        if (alive) setEstimatedShippingPrice(0);
+        return;
+      }
+      try {
+        const { data } = await supabase.auth.getSession();
+        const at = data?.session?.access_token || '';
+        const rt = data?.session?.refresh_token || '';
+        
+        const res = await fetch(`${API_BASE}/marketplace/shipping/quote`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            Cookie: `access_token=${at}; refresh_token=${rt}`,
+          },
+          body: JSON.stringify({ courier: selectedCourierBrand, courierService: selectedCourierService })
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!alive) return;
+        if (res.ok && json?.success !== false) {
+          setEstimatedShippingPrice(Number(json?.data?.price || 0));
+        } else {
+          setEstimatedShippingPrice(0);
+        }
+      } catch {
+        if (alive) setEstimatedShippingPrice(0);
+      }
+    })();
+    return () => { alive = false; };
+  }, [hasCourierOptions, selectedCourierBrand, selectedCourierService]);
   
   const fetchAddresses = async () => {
     try {
@@ -360,6 +464,12 @@ export default function AuctionModal({ visible, onClose, item, onPlaceBid }) {
       setSelectedTab('shipping');
       return;
     }
+    // If seller has courier preferences, require user to select one
+    if (hasCourierOptions && (!selectedCourierBrand || !selectedCourierService)) {
+      setErrorMsg('Please choose your courier and service in the Shipping tab before placing a bid.');
+      setSelectedTab('shipping');
+      return;
+    }
     if (isNaN(bid) || bid < startPriceVal) {
       Alert.alert('Invalid Bid', `Bid must be at least ₱${startPriceVal}`);
       return;
@@ -383,6 +493,16 @@ export default function AuctionModal({ visible, onClose, item, onPlaceBid }) {
         }
       } catch (e) {}
 
+      const payload = {
+        amount: Number(bid),
+        userAddressId: selectedAddressId,
+        idempotencyKey,
+      };
+      if (selectedCourierBrand && selectedCourierService) {
+        payload.courier = selectedCourierBrand;
+        payload.courierService = selectedCourierService;
+      }
+
       const res = await fetch(`${API_BASE}/auctions/${auctionId}/bids`, {
         method: 'POST',
         credentials: 'include',
@@ -391,11 +511,7 @@ export default function AuctionModal({ visible, onClose, item, onPlaceBid }) {
           Cookie: `access_token=${accessToken}; refresh_token=${refreshToken}`,
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({
-          amount: Number(bid),
-          userAddressId: selectedAddressId,
-          idempotencyKey,
-        }),
+        body: JSON.stringify(payload),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || json?.success === false) {
@@ -669,14 +785,64 @@ export default function AuctionModal({ visible, onClose, item, onPlaceBid }) {
                     </View>
                   )}
 
-                  <View style={[styles.shipOption, { marginTop: 8 }]}>
-                    <Text style={styles.shipLabel}>Standard Shipping</Text>
-                    <Text style={styles.shipValue}>3-7 business days, insured</Text>
-                  </View>
-                  <View style={styles.shipOption}>
-                    <Text style={styles.shipLabel}>Express Shipping</Text>
-                    <Text style={styles.shipValue}>1-3 business days, insured</Text>
-                  </View>
+                  {hasCourierOptions && (
+                    <>
+                      <View style={[styles.shipOption, { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#e0e0e0' }]}>
+                        <Text style={styles.shipLabel}>Shipping Method</Text>
+                        <Text style={styles.shipValue}>Select courier and service</Text>
+                      </View>
+                      <View style={styles.courierCardsContainer}>
+                        {courierBrands.map((brand) => {
+                          const brandSelected = selectedCourierBrand === brand;
+                          const services = ['standard', 'express'].filter(s => courierOptions[brand]?.[s]);
+                          const currentService = brandSelected && services.includes(selectedCourierService) ? selectedCourierService : services[0];
+                          return (
+                            <TouchableOpacity
+                              key={brand}
+                              style={[styles.courierCard, brandSelected && styles.courierCardSelected]}
+                              onPress={() => setSelectedCourierBrand(brand)}
+                            >
+                              <View style={styles.courierRadio}>
+                                {brandSelected && (
+                                  <View style={styles.courierRadioInner} />
+                                )}
+                              </View>
+                              <View style={styles.courierDetails}>
+                                <Text style={styles.courierName}>{brand}</Text>
+                                {brandSelected ? (
+                                  <View style={styles.courierServiceRow}>
+                                    <View style={styles.courierServiceSelect}>
+                                      {services.includes('standard') && (
+                                        <TouchableOpacity
+                                          style={[styles.serviceOption, selectedCourierService === 'standard' && styles.serviceOptionActive]}
+                                          onPress={() => setSelectedCourierService('standard')}
+                                        >
+                                          <Text style={[styles.serviceOptionText, selectedCourierService === 'standard' && styles.serviceOptionTextActive]}>Standard</Text>
+                                        </TouchableOpacity>
+                                      )}
+                                      {services.includes('express') && (
+                                        <TouchableOpacity
+                                          style={[styles.serviceOption, selectedCourierService === 'express' && styles.serviceOptionActive]}
+                                          onPress={() => setSelectedCourierService('express')}
+                                        >
+                                          <Text style={[styles.serviceOptionText, selectedCourierService === 'express' && styles.serviceOptionTextActive]}>Express</Text>
+                                        </TouchableOpacity>
+                                      )}
+                                    </View>
+                                    <Text style={styles.courierDesc}>
+                                      {selectedCourierService === 'express' ? 'Faster delivery' : 'Economy delivery'}
+                                    </Text>
+                                  </View>
+                                ) : (
+                                  <Text style={styles.courierDesc}>Select to choose service</Text>
+                                )}
+                              </View>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </>
+                  )}
                 </View>
               )}
             </View>
@@ -1211,6 +1377,83 @@ const styles = StyleSheet.create({
     color: '#666',
     fontStyle: 'italic',
     textAlign: 'center',
+  },
+  courierCardsContainer: {
+    marginTop: 12,
+    gap: 10,
+  },
+  courierCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    backgroundColor: '#fff',
+  },
+  courierCardSelected: {
+    borderColor: '#A68C7B',
+    backgroundColor: '#FAF7F4',
+  },
+  courierRadio: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#A68C7B',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    marginTop: 2,
+  },
+  courierRadioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#A68C7B',
+  },
+  courierDetails: {
+    flex: 1,
+  },
+  courierName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  courierServiceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  courierServiceSelect: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  serviceOption: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    backgroundColor: '#fff',
+  },
+  serviceOptionActive: {
+    borderColor: '#A68C7B',
+    backgroundColor: '#A68C7B',
+  },
+  serviceOptionText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#666',
+  },
+  serviceOptionTextActive: {
+    color: '#fff',
+  },
+  courierDesc: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 4,
   },
   loadingContainer: {
     alignItems: 'center',
