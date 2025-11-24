@@ -17,6 +17,8 @@ const API_ORIGIN = API_BASE.replace(/\/api$/, "");
 export default function SettingsScreen() {
   const { userData, refreshUserData } = useUser();
   const role = userData?.role || null;
+  const normalizedRole = String(role ?? '').trim().toLowerCase();
+  const canApplyAsArtist = normalizedRole !== 'artist' && normalizedRole !== 'admin';
   const router = useRouter();
 
   // Profile state
@@ -1026,7 +1028,7 @@ return (
             ) : (
               <>
                 {/* Apply as Artist Section */}
-                {String(role ?? '').trim().toLowerCase() === 'user' && (
+                {canApplyAsArtist && (
                   <View>
                     <Text style={styles.groupTitle}>Become an Artist</Text>
                     <TouchableOpacity
@@ -1065,7 +1067,6 @@ return (
                   </View>
                 )}
 
-                {/* Apply as Seller - for Artists (only show if NOT already a seller) */}
                 {String(role ?? '').trim().toLowerCase() === 'artist' && !userData?.isSeller && (
                   <View>
                     <Text style={styles.groupTitle}>Become a Seller</Text>
@@ -1102,6 +1103,16 @@ return (
                         {sellerApplicationStatus === 'rejected' && <Ionicons name="refresh" size={24} color="#FF4444" />}
                       </View>
                     </TouchableOpacity>
+                  </View>
+                )}
+
+                {normalizedRole === 'admin' && !userData?.isSeller && (
+                  <View style={styles.emptyState}>
+                    <Ionicons name="storefront-outline" size={64} color="#A68C7B" />
+                    <Text style={styles.emptyStateTitle}>Nothing to see here</Text>
+                    <Text style={styles.emptyStateText}>
+                      Marketplace settings are not available for admin accounts in this view.
+                    </Text>
                   </View>
                 )}
               </>

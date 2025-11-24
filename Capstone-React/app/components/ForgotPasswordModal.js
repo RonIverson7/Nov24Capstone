@@ -56,7 +56,7 @@ export default function ForgotPasswordModal({ isOpen, onClose }) {
         setStep(2);
         setEmail("");
       }
-    } catch (err) {
+    } catch (err) { 
       setMessage("An error occurred. Please try again.");
       setMessageType("error");
     } finally {
