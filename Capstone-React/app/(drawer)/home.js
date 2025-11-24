@@ -16,6 +16,7 @@ import CommentModal from '../components/CommentModal';
 import SetProfileModalinHome from '../components/SetProfileModalinHome';
 import PreferenceModal from '../components/PreferenceModal';
 import ReportModal from '../components/ReportModal';
+import { API_BASE } from '../config';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -131,7 +132,6 @@ const HomeScreen = () => {
   };
 
   const router = useRouter();
-  const API_BASE = "http://192.168.100.87:3000/api";
 
   // Helper: coerce various shapes into a valid uri string
   const ensureUri = (value) => {

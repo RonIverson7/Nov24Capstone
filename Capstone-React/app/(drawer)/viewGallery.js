@@ -9,8 +9,8 @@ import Header from '../components/Header';
 import { useUser } from '../contexts/UserContext';
 import AndroidFooterSpacer from '../components/Footer';
 import ReportModal from '../components/ReportModal';
+import { API_BASE } from '../config';
 
-const API_BASE = "http://192.168.100.87:3000/api";
 const API_ORIGIN = API_BASE.replace(/\/api$/, "");
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -944,7 +944,7 @@ const ViewGalleryScreen = () => {
               <Ionicons 
                 name={liked ? 'heart' : 'heart-outline'} 
                 size={24} 
-                color={liked ? '#A68C7B' : '#666'} 
+                color={liked ? 'red' : '#666'} 
               />
               <Text style={styles.statText}>{likeCount}</Text>
             </TouchableOpacity>

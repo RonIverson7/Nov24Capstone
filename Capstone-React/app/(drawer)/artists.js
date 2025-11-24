@@ -5,6 +5,7 @@ import Header from '../components/Header';
 import { supabase } from "../../supabase/supabaseClient";
 import { useRouter } from "expo-router";
 import AndroidFooterSpacer from '../components/Footer';
+import { API_BASE } from '../config';
 // Reusable component for each artist card
 const ArtistCard = ({ name, imageSource, onPress }) => {
   // Support both local require() images and remote URL strings
@@ -23,7 +24,6 @@ const ArtistCard = ({ name, imageSource, onPress }) => {
 
 const ArtistsScreen = () => {
   // Match home.js approach
-  const API_BASE = "http://192.168.100.87:3000/api";
   const router = useRouter();
 
   // Start with empty list; we will fetch from backend

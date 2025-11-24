@@ -9,15 +9,13 @@ import {
   Image,
   Alert,
   KeyboardAvoidingView,
-  Platform,
   StyleSheet
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../../supabase/supabaseClient';
-
-const API_BASE = "http://192.168.100.87:3000/api";
+import { API_BASE } from '../config';
 
 export default function EditProductModal({
   visible,

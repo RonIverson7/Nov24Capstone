@@ -10,8 +10,8 @@ import { supabase } from "../../supabase/supabaseClient";
 import { useUser } from "../contexts/UserContext";
 import AndroidFooterSpacer from '../components/Footer';
 import SettingsModal from "../components/SettingsModal";
+import { API_BASE } from '../config';
 
-const API_BASE = "http://192.168.100.87:3000/api";
 const API_ORIGIN = API_BASE.replace(/\/api$/, "");
 
 export default function SettingsScreen() {
@@ -35,26 +35,10 @@ export default function SettingsScreen() {
   const [accessToken, setAccessToken] = useState(null);
   const [refreshToken, setRefreshToken] = useState(null);
 
-  // Notification states
-  const [marketingEmails, setMarketingEmails] = useState(true);
-  const [orderUpdates, setOrderUpdates] = useState(true);
-  const [newFollowers, setNewFollowers] = useState(true);
-  const [commentsLikes, setCommentsLikes] = useState(true);
-  
-  // Notifications list
-  const [notifications, setNotifications] = useState([]);
-  const [showAllNotifications, setShowAllNotifications] = useState(false);
-  const [loadingNotifications, setLoadingNotifications] = useState(false);
-  
   // Collapsible sections
   const [accountExpanded, setAccountExpanded] = useState(true);
-  const [notificationsExpanded, setNotificationsExpanded] = useState(true);
   const [marketplaceExpanded, setMarketplaceExpanded] = useState(true);
 
-  // Privacy states
-  const [profileVisibility, setProfileVisibility] = useState('public');
-  const [showActivityStatus, setShowActivityStatus] = useState(true);
-  const [showVisibilityDropdown, setShowVisibilityDropdown] = useState(false);
 
   // Marketplace states
   const [commissionRate, setCommissionRate] = useState('15');
@@ -69,13 +53,15 @@ export default function SettingsScreen() {
   const [activities, setActivities] = useState([]);
   const [loadingActivities, setLoadingActivities] = useState(false);
 
-  // Change email state
-  const [showEmailForm, setShowEmailForm] = useState(false);
-  const [newEmail, setNewEmail] = useState('');
-  const [emailCurrentPassword, setEmailCurrentPassword] = useState('');
-  const [emailLoading, setEmailLoading] = useState(false);
-  const [emailMsg, setEmailMsg] = useState('');
-  const [emailMsgType, setEmailMsgType] = useState('');
+  // Change password state
+  const [showPwdForm, setShowPwdForm] = useState(false);
+  const [pwdCurrent, setPwdCurrent] = useState('');
+  const [pwdNew, setPwdNew] = useState('');
+  const [pwdConfirm, setPwdConfirm] = useState('');
+  const [pwdLoading, setPwdLoading] = useState(false);
+  const [pwdMsg, setPwdMsg] = useState('');
+  const [pwdMsgType, setPwdMsgType] = useState('');
+
 
   // Edit Profile modal state
   const [modalVisible, setModalVisible] = useState(false);
@@ -291,46 +277,72 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleChangeEmailSubmit = async () => {
-    setEmailMsg('');
-    if (!newEmail) {
-      setEmailMsgType('error');
-      setEmailMsg('Please enter a new email');
+  const handleChangePasswordSubmit = async () => {
+    setPwdMsg('');
+
+    if (!pwdCurrent) {
+      setPwdMsgType('error');
+      setPwdMsg('Current password is required');
       return;
     }
+    if (!pwdNew || !pwdConfirm) {
+      setPwdMsgType('error');
+      setPwdMsg('Please fill in all password fields');
+      return;
+    }
+    if (pwdNew.length < 8) {
+      setPwdMsgType('error');
+      setPwdMsg('Password must be at least 8 characters long');
+      return;
+    }
+    if (pwdNew !== pwdConfirm) {
+      setPwdMsgType('error');
+      setPwdMsg('Passwords do not match');
+      return;
+    }
+
     try {
-      setEmailLoading(true);
+      setPwdLoading(true);
       const { data } = await supabase.auth.getSession();
       const at = data?.session?.access_token || '';
       const rt = data?.session?.refresh_token || '';
 
-      const res = await fetch(`${API_BASE}/auth/change-email`, {
+      const res = await fetch(`${API_BASE}/auth/change-password`, {
         method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           Cookie: `access_token=${at}; refresh_token=${rt}`,
         },
-        body: JSON.stringify({ newEmail, currentPassword: emailCurrentPassword, access_token: at }),
+        body: JSON.stringify({
+          currentPassword: pwdCurrent,
+          newPassword: pwdNew,
+          confirmPassword: pwdConfirm,
+          access_token: at,
+        }),
       });
       const result = await res.json();
+
       if (!res.ok) {
-        setEmailMsgType('error');
-        setEmailMsg(result.message || 'Failed to start email change');
+        setPwdMsgType('error');
+        setPwdMsg(result.message || 'Failed to change password');
       } else {
-        setEmailMsgType('success');
-        setEmailMsg(result.message || 'Verification sent to the new email');
-        setShowEmailForm(false);
-        setNewEmail('');
-        setEmailCurrentPassword('');
+        setPwdMsgType('success');
+        setPwdMsg('Password updated successfully');
+        setPwdCurrent('');
+        setPwdNew('');
+        setPwdConfirm('');
+        setShowPwdForm(false);
+        Alert.alert('Success', 'Your password has been changed successfully!');
       }
     } catch (err) {
-      setEmailMsgType('error');
-      setEmailMsg('An error occurred. Please try again.');
+      setPwdMsgType('error');
+      setPwdMsg('An error occurred. Please try again.');
     } finally {
-      setEmailLoading(false);
+      setPwdLoading(false);
     }
   };
+
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -742,17 +754,22 @@ export default function SettingsScreen() {
   };
 
   const formattedTempDate = tempBirthday
-    ? tempBirthday.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
-    : "";
+  ? tempBirthday.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+  : "";
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <Header title="Settings" showSearch={false} />
+return (
+  <SafeAreaView style={styles.container}>
+    <Header title="Settings" showSearch={false} />
 
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={0}
+    >
       {/* Tab Navigation */}
       <View style={styles.tabsContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScroll}>
-          {['account', 'notifications', 'profile', 'marketplace', 'activities'].map(tab => (
+          {['account', 'profile', 'marketplace', 'activities'].map(tab => (
             <TouchableOpacity
               key={tab}
               style={[styles.tab, activeTab === tab && styles.tabActive]}
@@ -765,7 +782,6 @@ export default function SettingsScreen() {
             >
               <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
                 {tab === 'account' && 'Account'}
-                {tab === 'notifications' && 'Notifications'}
                 {tab === 'profile' && 'Profile'}
                 {tab === 'marketplace' && 'Marketplace'}
                 {tab === 'activities' && 'Activities'}
@@ -798,7 +814,10 @@ export default function SettingsScreen() {
           {accountExpanded && (
             <View>
               <Text style={styles.groupTitle}>Security</Text>
-              <TouchableOpacity style={styles.settingButton}>
+              <TouchableOpacity 
+                style={styles.settingButton}
+                onPress={() => setShowPwdForm(!showPwdForm)}
+              >
                 <View style={styles.settingContent}>
                   <View style={styles.iconContainer}>
                     <Ionicons name="key-outline" size={24} color="#A68C7B" />
@@ -811,131 +830,73 @@ export default function SettingsScreen() {
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity 
-                style={styles.settingButton}
-                onPress={() => setShowEmailForm(!showEmailForm)}
-              >
-                <View style={styles.settingContent}>
-                  <View style={styles.iconContainer}>
-                    <Ionicons name="mail-outline" size={24} color="#A68C7B" />
-                  </View>
-                  <View style={styles.settingTextContainer}>
-                    <Text style={styles.settingTitle}>Change Email</Text>
-                    <Text style={styles.settingDescription}>{userData?.email || 'user@example.com'}</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={24} color="#999" />
-                </View>
-              </TouchableOpacity>
-
-              {showEmailForm && (
+              {showPwdForm && (
                 <View style={styles.formContainer}>
                   <TextInput
                     style={styles.formInput}
-                    placeholder="New Email"
+                    placeholder="Current Password"
                     placeholderTextColor="#999"
-                    value={newEmail}
-                    onChangeText={setNewEmail}
-                    editable={!emailLoading}
+                    secureTextEntry
+                    value={pwdCurrent}
+                    onChangeText={setPwdCurrent}
+                    editable={!pwdLoading}
                   />
                   <TextInput
                     style={styles.formInput}
-                    placeholder="Current Password (optional)"
+                    placeholder="New Password (min 8 characters)"
                     placeholderTextColor="#999"
                     secureTextEntry
-                    value={emailCurrentPassword}
-                    onChangeText={setEmailCurrentPassword}
-                    editable={!emailLoading}
+                    value={pwdNew}
+                    onChangeText={setPwdNew}
+                    editable={!pwdLoading}
                   />
-                  {emailMsg && (
-                    <Text style={[styles.formMessage, emailMsgType === 'error' && styles.formMessageError]}>
-                      {emailMsg}
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="Confirm New Password"
+                    placeholderTextColor="#999"
+                    secureTextEntry
+                    value={pwdConfirm}
+                    onChangeText={setPwdConfirm}
+                    editable={!pwdLoading}
+                  />
+                  {pwdMsg && (
+                    <Text style={[styles.formMessage, pwdMsgType === 'error' && styles.formMessageError]}>
+                      {pwdMsg}
                     </Text>
                   )}
                   <View style={styles.formButtonGroup}>
                     <TouchableOpacity 
                       style={[styles.formButton, styles.formButtonPrimary]}
-                      onPress={handleChangeEmailSubmit}
-                      disabled={emailLoading}
+                      onPress={handleChangePasswordSubmit}
+                      disabled={pwdLoading}
                     >
                       <Text style={styles.formButtonText}>
-                        {emailLoading ? 'Sending...' : 'Send Verification'}
+                        {pwdLoading ? 'Saving...' : 'Save Password'}
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
                       style={[styles.formButton, styles.formButtonSecondary]}
-                      onPress={() => setShowEmailForm(false)}
-                      disabled={emailLoading}
+                      onPress={() => {
+                        setShowPwdForm(false);
+                        setPwdCurrent('');
+                        setPwdNew('');
+                        setPwdConfirm('');
+                        setPwdMsg('');
+                      }}
+                      disabled={pwdLoading}
                     >
                       <Text style={styles.formButtonSecondaryText}>Cancel</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
               )}
+
             </View>
           )}
         </View>
         </>
         )}
 
-        {/* Notifications Tab */}
-        {activeTab === 'notifications' && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notification Preferences</Text>
-          <Text style={styles.groupTitle}>Email Notifications</Text>
-          
-          <View style={styles.settingToggleItem}>
-            <View style={styles.settingTextContainer}>
-              <Text style={styles.settingTitle}>Marketing Emails</Text>
-              <Text style={styles.settingDescription}>Receive updates about new features</Text>
-            </View>
-            <TouchableOpacity 
-              style={[styles.toggleSwitch, marketingEmails && styles.toggleSwitchActive]}
-              onPress={() => setMarketingEmails(!marketingEmails)}
-            >
-              <View style={[styles.toggleThumb, marketingEmails && styles.toggleThumbActive]} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.settingToggleItem}>
-            <View style={styles.settingTextContainer}>
-              <Text style={styles.settingTitle}>Order Updates</Text>
-              <Text style={styles.settingDescription}>Get notified about order status</Text>
-            </View>
-            <TouchableOpacity 
-              style={[styles.toggleSwitch, orderUpdates && styles.toggleSwitchActive]}
-              onPress={() => setOrderUpdates(!orderUpdates)}
-            >
-              <View style={[styles.toggleThumb, orderUpdates && styles.toggleThumbActive]} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.settingToggleItem}>
-            <View style={styles.settingTextContainer}>
-              <Text style={styles.settingTitle}>New Followers</Text>
-              <Text style={styles.settingDescription}>Notification when someone follows you</Text>
-            </View>
-            <TouchableOpacity 
-              style={[styles.toggleSwitch, newFollowers && styles.toggleSwitchActive]}
-              onPress={() => setNewFollowers(!newFollowers)}
-            >
-              <View style={[styles.toggleThumb, newFollowers && styles.toggleThumbActive]} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.settingToggleItem}>
-            <View style={styles.settingTextContainer}>
-              <Text style={styles.settingTitle}>Comments & Likes</Text>
-              <Text style={styles.settingDescription}>Notification for interactions on your posts</Text>
-            </View>
-            <TouchableOpacity 
-              style={[styles.toggleSwitch, commentsLikes && styles.toggleSwitchActive]}
-              onPress={() => setCommentsLikes(!commentsLikes)}
-            >
-              <View style={[styles.toggleThumb, commentsLikes && styles.toggleThumbActive]} />
-            </TouchableOpacity>
-          </View>
-        </View>
-        )}
 
         {/* Profile Tab */}
         {activeTab === 'profile' && (
@@ -991,84 +952,6 @@ export default function SettingsScreen() {
               </View>
             </TouchableOpacity>
 
-            {/* Privacy Settings */}
-            <Text style={styles.groupTitle}>Privacy</Text>
-            
-            <View>
-              <View style={[styles.settingButton, styles.visibilityContainer]}>
-                <View style={styles.settingContent}>
-                  <View style={styles.iconContainer}>
-                    <Ionicons name="eye-outline" size={24} color="#A68C7B" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.settingTitle}>Profile Visibility</Text>
-                    <Text style={styles.settingDescription}>Control who can see your profile</Text>
-                  </View>
-                </View>
-                
-                <TouchableOpacity 
-                  style={styles.visibilitySelector}
-                  onPress={() => setShowVisibilityDropdown(!showVisibilityDropdown)}
-                >
-                  <Text style={{ color: '#A68C7B', fontSize: 14, fontWeight: '600', flex: 1 }}>
-                    {profileVisibility === 'public' ? 'Public' : profileVisibility === 'followers' ? 'Followers Only' : 'Private'}
-                  </Text>
-                  <Ionicons name={showVisibilityDropdown ? 'chevron-up' : 'chevron-down'} size={20} color="#A68C7B" />
-                </TouchableOpacity>
-              </View>
-              
-              {showVisibilityDropdown && (
-                <View style={styles.dropdownMenu}>
-                <TouchableOpacity 
-                  style={styles.dropdownItem}
-                  onPress={() => {
-                    setProfileVisibility('public');
-                    setShowVisibilityDropdown(false);
-                  }}
-                >
-                  <Ionicons name="globe-outline" size={20} color="#666" />
-                  <Text style={styles.dropdownText}>Public</Text>
-                  {profileVisibility === 'public' && <Ionicons name="checkmark" size={20} color="#A68C7B" />}
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.dropdownItem}
-                  onPress={() => {
-                    setProfileVisibility('followers');
-                    setShowVisibilityDropdown(false);
-                  }}
-                >
-                  <Ionicons name="people-outline" size={20} color="#666" />
-                  <Text style={styles.dropdownText}>Followers Only</Text>
-                  {profileVisibility === 'followers' && <Ionicons name="checkmark" size={20} color="#A68C7B" />}
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.dropdownItem}
-                  onPress={() => {
-                    setProfileVisibility('private');
-                    setShowVisibilityDropdown(false);
-                  }}
-                >
-                  <Ionicons name="lock-closed-outline" size={20} color="#666" />
-                  <Text style={styles.dropdownText}>Private</Text>
-                  {profileVisibility === 'private' && <Ionicons name="checkmark" size={20} color="#A68C7B" />}
-                </TouchableOpacity>
-              </View>
-              )}
-            </View>
-
-            <View style={styles.settingToggleItem}>
-              <View style={styles.settingTextContainer}>
-                <Text style={styles.settingTitle}>Show Activity Status</Text>
-                <Text style={styles.settingDescription}>Let others see when you're active</Text>
-              </View>
-              <TouchableOpacity 
-                style={[styles.toggleSwitch, showActivityStatus && styles.toggleSwitchActive]}
-                onPress={() => setShowActivityStatus(!showActivityStatus)}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.toggleThumb, showActivityStatus && styles.toggleThumbActive]} />
-              </TouchableOpacity>
-            </View>
         </View>
         )}
 
@@ -1271,6 +1154,7 @@ export default function SettingsScreen() {
         </View>
         )}
       </ScrollView>
+      </KeyboardAvoidingView>
 
       <SettingsModal
         styles={styles}

@@ -9,7 +9,7 @@ import ReturnRequestModal from '../components/ReturnRequestModal';
 import ReturnDetailsModal from '../components/ReturnDetailsModal';
 import OrderDetailsModalSimple from '../components/OrderDetailsModalSimple';
 import AndroidFooterSpacer from '../components/Footer';
-const API_BASE = "http://192.168.100.87:3000/api";
+import { API_BASE } from '../config';
 
 function MyOrdersScreen() {
   const router = useRouter();

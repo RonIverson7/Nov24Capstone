@@ -6,7 +6,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { supabase } from "../../supabase/supabaseClient";
 import io from 'socket.io-client';
 import AndroidFooterSpacer from '../components/Footer';
-const API_BASE = "http://192.168.100.87:3000/api";
+import { API_BASE } from '../config';
 const API_ORIGIN = API_BASE.replace(/\/api$/, "");
 const INPUT_BAR_BASE_HEIGHT = 56; // approximate input bar height
 const ANDROID_INPUT_BASELINE_OFFSET = 0; // manual downward adjustment for Android input bar

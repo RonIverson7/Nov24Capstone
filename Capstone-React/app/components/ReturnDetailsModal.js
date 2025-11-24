@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {Modal, View, Text, TouchableOpacity, ScrollView, Alert, StyleSheet, ActivityIndicator, TextInput, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../supabase/supabaseClient';
-
-const API_BASE = "http://192.168.100.87:3000/api";
+import { API_BASE } from '../config';
 
 const ReturnDetailsModal = ({ visible, onClose, returnId, role = 'buyer' }) => {
   const [returnDetails, setReturnDetails] = useState(null);

@@ -6,6 +6,7 @@ import { supabase } from "../../supabase/supabaseClient";
 import { socket } from '../../lib/socketClient';
 import { useUser } from '../contexts/UserContext';
 import AndroidFooterSpacer from '../components/Footer';
+import { API_BASE } from '../config';
 
 // Chat item component
 const ChatItem = ({ name, lastMessage, imageSource, lastMessageTime, onPress, unread, unreadCount }) => {
@@ -41,7 +42,6 @@ const MessagesScreen = () => {
   const currentUserId = userData?.id || null;
   
   const router = useRouter();
-  const API_BASE = "http://192.168.100.87:3000/api";
   const API_ORIGIN = API_BASE.replace(/\/api$/, "");
 
   const [conversations, setConversations] = useState([]);

@@ -5,8 +5,8 @@ import { useNavigation, useRouter, useFocusEffect, usePathname } from 'expo-rout
 import { supabase } from "../../supabase/supabaseClient";
 import { useUser } from '../contexts/UserContext';
 import io from 'socket.io-client';
+import { API_BASE } from '../config';
 
-const API_BASE = "http://192.168.100.87:3000/api";
 const API_ORIGIN = API_BASE.replace(/\/api$/, "");
 
 const Header = ({ title, showSearch, onSearch }) => {

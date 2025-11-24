@@ -3,8 +3,7 @@ import { Modal, View, Text, TouchableOpacity,ScrollView,StyleSheet, ActivityIndi
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../supabase/supabaseClient';
-
-const API_BASE = "http://192.168.100.87:3000/api";
+import { API_BASE } from '../config';
 
 export default function ViewBidsModal({
   open = false,

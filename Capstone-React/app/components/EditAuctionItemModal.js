@@ -3,8 +3,7 @@ import { Modal, View, Text, TouchableOpacity, ScrollView, TextInput, Alert, Keyb
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../supabase/supabaseClient';
-
-const API_BASE = "http://192.168.100.87:3000/api";
+import { API_BASE } from '../config';
 
 const EditAuctionItemModal = ({ isOpen, onClose, item, onSuccess, styles: externalStyles }) => {
   const insets = useSafeAreaInsets();

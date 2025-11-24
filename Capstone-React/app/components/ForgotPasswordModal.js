@@ -12,8 +12,7 @@ import {
   Platform,
   KeyboardAvoidingView,
 } from "react-native";
-
-const API_BASE = "http://192.168.100.87:3000/api";
+import { API_BASE } from '../config';
 
 export default function ForgotPasswordModal({ isOpen, onClose }) {
   const [email, setEmail] = useState("");

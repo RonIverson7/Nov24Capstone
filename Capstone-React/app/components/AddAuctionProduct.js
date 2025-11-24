@@ -6,8 +6,7 @@ import DateTimePickerModal from "react-native-modal-datetime-picker";
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../../supabase/supabaseClient';
 import EditAuctionItemModal from './EditAuctionItemModal';
-
-const API_BASE = "http://192.168.100.87:3000/api";
+import { API_BASE } from '../config';
 
 const styles = StyleSheet.create({
   stepSubtitle: {
