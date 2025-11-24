@@ -15,6 +15,7 @@ import EditHomeModal from '../components/EditHomeModal';
 import CommentModal from '../components/CommentModal';
 import SetProfileModalinHome from '../components/SetProfileModalinHome';
 import PreferenceModal from '../components/PreferenceModal';
+import ReportModal from '../components/ReportModal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -69,6 +70,11 @@ const HomeScreen = () => {
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const commentListRef = React.useRef(null);
+
+  // Report modal state
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [reportTargetType, setReportTargetType] = useState(null);
+  const [reportTargetId, setReportTargetId] = useState(null);
 
   // Profile modal and fields
   const [profileModalVisible, setProfileModalVisible] = useState(false);
@@ -270,6 +276,12 @@ const HomeScreen = () => {
     } finally {
       setCommentMenuForId(null);
     }
+  };
+
+  const openReportModal = (targetType, targetId) => {
+    setReportTargetType(targetType);
+    setReportTargetId(targetId);
+    setReportModalVisible(true);
   };
 
   // Fetch user profile from backend to determine if profile modal should show
@@ -968,47 +980,8 @@ const HomeScreen = () => {
     setModalVisible(true);
   };
 
-  const handleReportPost = async (postId) => {
-    try {
-      Alert.alert(
-        'Report Post',
-        'Are you sure you want to report this post? Our team will review it.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Report',
-            style: 'destructive',
-            onPress: async () => {
-              await submitReport(postId);
-            }
-          }
-        ]
-      );
-    } catch (err) {
-      console.error('Report error:', err);
-    }
-  };
-
-  const submitReport = async (postId) => {
-    try {
-      const res = await fetch(`${API_BASE}/homepage/reportPost`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Cookie': `access_token=${accessToken}; refresh_token=${refreshToken}`,
-        },
-        body: JSON.stringify({ postId }),
-      });
-
-      if (res.ok) {
-        Alert.alert('Success', 'Post reported successfully. Our team will review it.');
-      } else {
-        Alert.alert('Error', 'Failed to report post. Please try again.');
-      }
-    } catch (err) {
-      Alert.alert('Error', 'Error reporting post');
-      console.error(err);
-    }
+  const handleReportPost = (postId) => {
+    openReportModal('post', postId);
   };
 
   const renderPost = ({ item: post }) => {
@@ -1711,6 +1684,17 @@ const HomeScreen = () => {
           </View>
         </View>
       </Modal>
+
+      <ReportModal
+        isOpen={reportModalVisible}
+        onClose={() => setReportModalVisible(false)}
+        targetType={reportTargetType}
+        targetId={reportTargetId}
+        onSubmitted={() => {
+          setReportModalVisible(false);
+          Alert.alert('Success', 'Report submitted. Thank you.');
+        }}
+      />
 
       <AndroidFooterSpacer />
     </SafeAreaView>

@@ -3,9 +3,11 @@ import {Modal,View,Text,Image,TouchableOpacity,ScrollView,TextInput,KeyboardAvoi
 import { Ionicons } from '@expo/vector-icons';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import CommentModal from './CommentModal';
+import ReportModal from './ReportModal';
 
 export default function ViewArtistModal(props) {
   const [fullscreenImageUri, setFullscreenImageUri] = useState(null);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
 
   const {
     styles,
@@ -161,7 +163,7 @@ export default function ViewArtistModal(props) {
                     {/* Report button - show for users viewing other people's artwork */}
                     {currentUserId && !(currentUserId && ((isViewingOther && currentUserId === viewedUserId) || (!isViewingOther)) && (role === 'artist' || role === 'admin')) && (
                       <TouchableOpacity 
-                        onPress={() => Alert.alert('Report', 'Report functionality coming soon')} 
+                        onPress={() => setReportModalVisible(true)} 
                         style={{ padding: 8 }}
                       >
                         <Ionicons name="flag-outline" size={22} color="#555" />
@@ -399,6 +401,18 @@ export default function ViewArtistModal(props) {
         loadMoreComments={loadMoreArtComments}
         showLessComments={showLessArtComments}
         styles={styles}
+      />
+
+      {/* Report Modal */}
+      <ReportModal
+        isOpen={reportModalVisible}
+        onClose={() => setReportModalVisible(false)}
+        targetType="artwork"
+        targetId={selectedArt?.id}
+        onSubmitted={() => {
+          Alert.alert('Success', 'Thank you for reporting this content. We will review it shortly.');
+          setReportModalVisible(false);
+        }}
       />
     </>
   );

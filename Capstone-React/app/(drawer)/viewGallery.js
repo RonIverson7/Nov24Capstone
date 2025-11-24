@@ -8,6 +8,7 @@ import { supabase } from "../../supabase/supabaseClient";
 import Header from '../components/Header';
 import { useUser } from '../contexts/UserContext';
 import AndroidFooterSpacer from '../components/Footer';
+import ReportModal from '../components/ReportModal';
 
 const API_BASE = "http://192.168.254.114:3000/api";
 const API_ORIGIN = API_BASE.replace(/\/api$/, "");
@@ -46,6 +47,11 @@ const ViewGalleryScreen = () => {
   const [commentMenuForId, setCommentMenuForId] = useState(null);
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editCommentText, setEditCommentText] = useState('');
+
+  // Report modal state
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [reportTargetType, setReportTargetType] = useState(null);
+  const [reportTargetId, setReportTargetId] = useState(null);
   
   // Edit modal states
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -239,40 +245,16 @@ const ViewGalleryScreen = () => {
     );
   };
 
+  const openReportModal = (targetType, targetId) => {
+    setReportTargetType(targetType);
+    setReportTargetId(targetId);
+    setReportModalVisible(true);
+  };
+
   const handleReportArtwork = () => {
-    Alert.alert(
-      'Report Artwork',
-      'Are you sure you want to report this artwork? Our team will review it.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Report',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const { at, rt } = await loadSession();
-              const res = await fetch(`${API_BASE}/gallery/reportArtwork`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  Cookie: `access_token=${at}; refresh_token=${rt}`,
-                },
-                body: JSON.stringify({ artworkId: artwork.id, reason: 'Inappropriate' }),
-              });
-              
-              if (res.ok) {
-                Alert.alert('Success', 'Artwork reported successfully. Our team will review it.');
-              } else {
-                Alert.alert('Error', 'Failed to report artwork. Please try again.');
-              }
-            } catch (err) {
-              console.error('Report error:', err);
-              Alert.alert('Error', 'Unable to send report right now.');
-            }
-          }
-        }
-      ]
-    );
+    if (artwork?.id) {
+      openReportModal('artwork', artwork.id);
+    }
   };
 
   const fetchArtworkDetails = async () => {
@@ -1281,6 +1263,17 @@ const ViewGalleryScreen = () => {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      <ReportModal
+        isOpen={reportModalVisible}
+        onClose={() => setReportModalVisible(false)}
+        targetType={reportTargetType}
+        targetId={reportTargetId}
+        onSubmitted={() => {
+          setReportModalVisible(false);
+          Alert.alert('Success', 'Report submitted. Thank you.');
+        }}
+      />
     </SafeAreaView>
   );
 };
