@@ -6,7 +6,7 @@ import { supabase } from "../../supabase/supabaseClient";
 import { useUser } from '../contexts/UserContext';
 import io from 'socket.io-client';
 
-const API_BASE = "http://192.168.254.114:3000/api";
+const API_BASE = "http://192.168.100.87:3000/api";
 const API_ORIGIN = API_BASE.replace(/\/api$/, "");
 
 const Header = ({ title, showSearch, onSearch }) => {

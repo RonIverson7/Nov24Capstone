@@ -8,7 +8,7 @@ import { socket } from '../../lib/socketClient';
 import { supabase } from '../../supabase/supabaseClient';
 
 // API configuration - matches your backend
-const API_BASE = "http://192.168.254.114:3000/api";// Update this to match your backend
+const API_BASE = "http://192.168.100.87:3000/api";// Update this to match your backend
 const API_ORIGIN = API_BASE.replace(/\/api$/, "");
 
 // Create the context

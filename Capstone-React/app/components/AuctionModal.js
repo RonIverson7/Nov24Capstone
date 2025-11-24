@@ -6,7 +6,7 @@ import { useUser } from '../contexts/UserContext';
 import AddAddressModal from './AddAddressModal';
 import EditAddressModal from './EditAddressModal';
 
-const API_BASE = "http://192.168.254.114:3000/api";
+const API_BASE = "http://192.168.100.87:3000/api";
 
 export default function AuctionModal({ visible, onClose, item, onPlaceBid }) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);

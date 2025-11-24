@@ -10,7 +10,7 @@ import { useUser } from '../contexts/UserContext';
 import AndroidFooterSpacer from '../components/Footer';
 import ReportModal from '../components/ReportModal';
 
-const API_BASE = "http://192.168.254.114:3000/api";
+const API_BASE = "http://192.168.100.87:3000/api";
 const API_ORIGIN = API_BASE.replace(/\/api$/, "");
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 

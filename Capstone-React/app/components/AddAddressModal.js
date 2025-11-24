@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, Modal, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, TextInput, FlatList, ActivityIndicator, Alert, } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const API_BASE = 'http://192.168.254.114:3000/api';
+const API_BASE = "http://192.168.100.87:3000/api";
 
 const AddAddressModal = ({
   visible,

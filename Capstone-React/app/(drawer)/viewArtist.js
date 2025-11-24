@@ -11,8 +11,7 @@ import { supabase } from "../../supabase/supabaseClient";
 import { useUser } from "../contexts/UserContext";
 import ViewArtistModal from "../components/ViewArtistModal";
 import AndroidFooterSpacer from '../components/Footer';
-import ReportModal from "../components/ReportModal";
-const API_BASE = "http://192.168.254.114:3000/api";
+const API_BASE = "http://192.168.100.87:3000/api";
 const API_ORIGIN = API_BASE.replace(/\/api$/, "");
 
 export default function ProfileScreen() {
@@ -87,11 +86,6 @@ export default function ProfileScreen() {
   const [loadingMoreComments, setLoadingMoreComments] = useState(false);
   const [skipCommentFetch, setSkipCommentFetch] = useState(false);
   const [totalCommentCount, setTotalCommentCount] = useState(0);
-
-  // Report modal state
-  const [reportModalVisible, setReportModalVisible] = useState(false);
-  const [reportTargetType, setReportTargetType] = useState(null);
-  const [reportTargetId, setReportTargetId] = useState(null);
   
   // Open comments modal - close artwork modal first
   const openCommentsModal = async () => {
@@ -627,16 +621,6 @@ export default function ProfileScreen() {
     }
   };
 
-  const openReportModal = (targetType, targetId) => {
-    setReportTargetType(targetType);
-    setReportTargetId(targetId);
-    setReportModalVisible(true);
-  };
-
-  const handleReportArtwork = (artId) => {
-    openReportModal('artwork', artId);
-  };
-
   const formattedDate = birthday ? birthday.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "";
 
   // Only artists/admin can upload artwork
@@ -1142,7 +1126,6 @@ export default function ProfileScreen() {
         setArtMenuVisible={setArtMenuVisible}
         handleEditArtwork={handleEditArtwork}
         handleDeleteArtwork={handleDeleteArtwork}
-        handleReportArtwork={handleReportArtwork}
         descriptionExpanded={descriptionExpanded}
         setDescriptionExpanded={setDescriptionExpanded}
         openCommentsModal={openCommentsModal}
@@ -1194,18 +1177,6 @@ export default function ProfileScreen() {
 
         </ScrollView>
       )}
-
-      <ReportModal
-        isOpen={reportModalVisible}
-        onClose={() => setReportModalVisible(false)}
-        targetType={reportTargetType}
-        targetId={reportTargetId}
-        onSubmitted={() => {
-          setReportModalVisible(false);
-          Alert.alert('Success', 'Report submitted. Thank you.');
-        }}
-      />
-
       <AndroidFooterSpacer />
     </SafeAreaView>
   );

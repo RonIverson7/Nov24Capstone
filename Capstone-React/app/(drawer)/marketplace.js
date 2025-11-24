@@ -9,7 +9,7 @@ import AuctionModal from '../components/AuctionModal';
 import { useUser } from '../contexts/UserContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AndroidFooterSpacer from '../components/Footer';
-const API_BASE = "http://192.168.254.114:3000/api";
+const API_BASE = "http://192.168.100.87:3000/api";
 
 const MarketplaceScreen = () => {
   // Get user data from UserContext

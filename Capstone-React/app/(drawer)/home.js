@@ -73,8 +73,7 @@ const HomeScreen = () => {
 
   // Report modal state
   const [reportModalVisible, setReportModalVisible] = useState(false);
-  const [reportTargetType, setReportTargetType] = useState(null);
-  const [reportTargetId, setReportTargetId] = useState(null);
+  const [reportTarget, setReportTarget] = useState({ type: '', id: '' });
 
   // Profile modal and fields
   const [profileModalVisible, setProfileModalVisible] = useState(false);
@@ -132,7 +131,7 @@ const HomeScreen = () => {
   };
 
   const router = useRouter();
-  const API_BASE = "http://192.168.254.114:3000/api";
+  const API_BASE = "http://192.168.100.87:3000/api";
 
   // Helper: coerce various shapes into a valid uri string
   const ensureUri = (value) => {
@@ -260,28 +259,11 @@ const HomeScreen = () => {
 
   const reportComment = async (comment) => {
     try {
-      const res = await fetch(`${API_BASE}/homepage/reportComment`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Cookie': `access_token=${accessToken}; refresh_token=${refreshToken}`,
-        },
-        body: JSON.stringify({ commentId: comment.id, reason: 'Inappropriate' }),
-      });
-      if (!res.ok) throw new Error('Failed to report');
-      Alert.alert('Report', 'Thanks for your report. Our team will review it.');
-    } catch (e) {
-      console.error(e);
-      Alert.alert('Report', 'Unable to send report right now.');
+      setReportTarget({ type: 'homepageComment', id: comment.id });
+      setReportModalVisible(true);
     } finally {
       setCommentMenuForId(null);
     }
-  };
-
-  const openReportModal = (targetType, targetId) => {
-    setReportTargetType(targetType);
-    setReportTargetId(targetId);
-    setReportModalVisible(true);
   };
 
   // Fetch user profile from backend to determine if profile modal should show
@@ -411,6 +393,10 @@ const HomeScreen = () => {
           setSelectedVideo(null);
           return true;
         }
+        if (reportModalVisible) {
+          setReportModalVisible(false);
+          return true;
+        }
         if (selectedImage !== null && selectedImages.length > 0) {
           setSelectedImage(null);
           setSelectedImages([]);
@@ -437,7 +423,7 @@ const HomeScreen = () => {
       };
       const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
       return () => sub.remove();
-    }, [videoModalVisible, selectedImage, selectedImages.length, commentModalVisible, modalVisible, profileModalVisible, interestsModalVisible])
+    }, [videoModalVisible, reportModalVisible, selectedImage, selectedImages.length, commentModalVisible, modalVisible, profileModalVisible, interestsModalVisible])
   );
 
   const fetchPosts = async (at = accessToken, rt = refreshToken, page = 1, append = false) => {
@@ -980,8 +966,36 @@ const HomeScreen = () => {
     setModalVisible(true);
   };
 
-  const handleReportPost = (postId) => {
-    openReportModal('post', postId);
+  const handleReportPost = async (postId) => {
+    try {
+      setReportTarget({ type: 'homepagePost', id: postId });
+      setReportModalVisible(true);
+      setMenuVisiblePostId(null);
+    } catch (err) {
+      console.error('Report error:', err);
+    }
+  };
+
+  const submitReport = async (postId) => {
+    try {
+      const res = await fetch(`${API_BASE}/homepage/reportPost`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': `access_token=${accessToken}; refresh_token=${refreshToken}`,
+        },
+        body: JSON.stringify({ postId }),
+      });
+
+      if (res.ok) {
+        Alert.alert('Success', 'Post reported successfully. Our team will review it.');
+      } else {
+        Alert.alert('Error', 'Failed to report post. Please try again.');
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Error reporting post');
+      console.error(err);
+    }
   };
 
   const renderPost = ({ item: post }) => {
@@ -1626,6 +1640,19 @@ const HomeScreen = () => {
         styles={styles}
       />
 
+      <ReportModal
+        isOpen={reportModalVisible}
+        onClose={() => setReportModalVisible(false)}
+        targetType={reportTarget.type}
+        targetId={reportTarget.id}
+        onSubmitted={() => {
+          Alert.alert('Report Submitted', 'Report submitted. Thank you for helping keep our community safe.');
+        }}
+        API_BASE={API_BASE}
+        accessToken={accessToken}
+        refreshToken={refreshToken}
+      />
+
       {/* Video Viewer Modal */}
       <Modal
         visible={videoModalVisible}
@@ -1684,17 +1711,6 @@ const HomeScreen = () => {
           </View>
         </View>
       </Modal>
-
-      <ReportModal
-        isOpen={reportModalVisible}
-        onClose={() => setReportModalVisible(false)}
-        targetType={reportTargetType}
-        targetId={reportTargetId}
-        onSubmitted={() => {
-          setReportModalVisible(false);
-          Alert.alert('Success', 'Report submitted. Thank you.');
-        }}
-      />
 
       <AndroidFooterSpacer />
     </SafeAreaView>

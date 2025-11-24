@@ -4,7 +4,7 @@ import { Modal, View, Text, TouchableOpacity,ScrollView,StyleSheet, ActivityIndi
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../supabase/supabaseClient';
 
-const API_BASE = 'http://192.168.254.114:3000/api';
+const API_BASE = "http://192.168.100.87:3000/api";
 
 export default function ViewBidsModal({
   open = false,

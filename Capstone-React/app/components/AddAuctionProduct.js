@@ -7,7 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../../supabase/supabaseClient';
 import EditAuctionItemModal from './EditAuctionItemModal';
 
-const API_BASE = "http://192.168.254.114:3000/api";
+const API_BASE = "http://192.168.100.87:3000/api";
 
 const styles = StyleSheet.create({
   stepSubtitle: {

@@ -1,11 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, View, Text, TouchableOpacity, ScrollView, TextInput, Image, Alert, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
+import {
+  Modal,
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
+  Image,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../../supabase/supabaseClient';
 
-const API_BASE = "http://192.168.254.114:3000/api";
+const API_BASE = "http://192.168.100.87:3000/api";
 
 export default function EditProductModal({
   visible,
@@ -215,14 +227,13 @@ export default function EditProductModal({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={externalStyles.modalOverlay}
       >
-        <TouchableOpacity
-          style={externalStyles.modalOverlayTouchable}
-          activeOpacity={1}
-          onPress={handleCloseModal}
-        >
+        <View style={externalStyles.modalOverlayTouchable}>
           <TouchableOpacity
+            style={StyleSheet.absoluteFill}
             activeOpacity={1}
-            onPress={(e) => e.stopPropagation()}
+            onPress={handleCloseModal}
+          />
+          <View
             style={externalStyles.modalContent}
           >
             <View style={externalStyles.modalHeader}>
@@ -237,14 +248,18 @@ export default function EditProductModal({
               contentContainerStyle={{ paddingBottom: insets.bottom + 3 }}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
+              nestedScrollEnabled={true}
+              scrollEnabled={true}
             >
-              <Text style={externalStyles.sectionHeader}>Product Images</Text>
+              <Text style={[externalStyles.sectionHeader, { marginTop: -4 }]}>Product Images</Text>
               <Text style={externalStyles.hintText}>Support: JPG, PNG up to 10MB • Maximum 10 images • First image will be primary</Text>
 
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 style={externalStyles.imagePickerScrollView}
+                nestedScrollEnabled={true}
+                scrollEnabled={true}
               >
                 {editImages.map((image, index) => (
                   <View key={index} style={externalStyles.imagePreviewItem}>
@@ -486,8 +501,8 @@ export default function EditProductModal({
                 <Text style={externalStyles.submitBtnText}>Update Product</Text>
               </TouchableOpacity>
             </ScrollView>
-          </TouchableOpacity>
-        </TouchableOpacity>
+          </View>
+        </View>
       </KeyboardAvoidingView>
     </Modal>
   );

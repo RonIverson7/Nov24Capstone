@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, Platform, Dimensions, StatusBar } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const AndroidFooterSpacer = ({ backgroundColor = '#fff', extra = 0 }) => {
   if (Platform.OS !== 'android') return null;
+
+  const insets = useSafeAreaInsets();
   const [h, setH] = useState(0);
 
   useEffect(() => {
@@ -18,8 +21,11 @@ const AndroidFooterSpacer = ({ backgroundColor = '#fff', extra = 0 }) => {
     return () => { try { sub?.remove?.(); } catch {} };
   }, []);
 
+  const systemInset = insets && typeof insets.bottom === 'number' ? insets.bottom : 0;
+  const base = Math.max(h, systemInset);
   const add = Number.isFinite(extra) ? extra : 0;
-  const height = Math.max(0, h + add);
+  const height = Math.max(0, base + add);
+
   if (height <= 0) return null;
   return <View style={{ height, backgroundColor }} />;
 };

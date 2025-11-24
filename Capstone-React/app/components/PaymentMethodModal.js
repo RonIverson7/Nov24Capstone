@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../supabase/supabaseClient';
 
-const API_BASE = "http://192.168.254.114:3000/api";
+const API_BASE = "http://192.168.100.87:3000/api";
 
 const PaymentMethodModal = ({ visible, onClose, onSave, currentMethod }) => {
   const insets = useSafeAreaInsets();
